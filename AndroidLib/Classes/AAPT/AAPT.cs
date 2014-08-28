@@ -9,22 +9,26 @@ namespace RegawMOD.Android
     /// </summary>
     public partial class AAPT : IDisposable
     {
-        private static Dictionary<string, string> RESOURCES = new Dictionary<string, string>
-        {
-            {"aapt.exe", "26a35ee028ed08d7ad0d18ffb6bb587a"}
-        };
-
-        private string resDir;
-
         /// <summary>
         /// Initializes a new instance of the <c>AAPT</c> class
         /// </summary>
-        public AAPT()
+        public AAPT(string aaptPath)
         {
-            ResourceFolderManager.Register("AAPT");
-            this.resDir = ResourceFolderManager.GetRegisteredFolderPath("AAPT");
+            if(!File.Exists(aaptPath))
+            {
+                throw new FileNotFoundException();
+            }
 
-            ExtractResources(this.resDir);
+            this.AaptPath = aaptPath;
+        }
+
+        /// <summary>
+        /// Gets or sets the path to the <c>aapt.exe</c> executable.
+        /// </summary>
+        public string AaptPath
+        {
+            get;
+            protected set;
         }
 
         /// <summary>
@@ -37,15 +41,7 @@ namespace RegawMOD.Android
             if (!source.Exists)
                 throw new FileNotFoundException();
 
-            return new Badging(source, Command.RunProcessReturnOutput(Path.Combine(this.resDir, "aapt.exe"), "dump badging \"" + source.FullName + "\"", true, Command.DEFAULT_TIMEOUT));
-        }
-
-        private void ExtractResources(string path)
-        {
-            string[] res = new string[RESOURCES.Count];
-            RESOURCES.Keys.CopyTo(res, 0);
-
-            Extract.Resources("RegawMOD.Android", path, "Resources.AAPT", res);
+            return new Badging(source, Command.RunProcessReturnOutput(this.AaptPath, "dump badging \"" + source.FullName + "\"", true, Command.DEFAULT_TIMEOUT));
         }
 
         /// <summary>
@@ -53,7 +49,6 @@ namespace RegawMOD.Android
         /// </summary>
         public void Dispose()
         {
-            ResourceFolderManager.Unregister("AAPT");
         }
     }
 }

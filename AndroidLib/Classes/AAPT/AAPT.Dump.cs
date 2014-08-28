@@ -13,6 +13,7 @@ namespace RegawMOD.Android
         {
             #region Constants
             private const string APOSTROPHE = "'";
+            private const char APOSTROPHE_CHAR = '\'';
 
             private const string PACKAGE = "package:";
             private const string PACKAGE_NAME = "name='";
@@ -31,6 +32,7 @@ namespace RegawMOD.Android
             private const string SDK_VERSION = "sdkVersion:'";
             private const string SDK_TARGET = "targetSdkVersion:'";
 
+            private const string NATIVE_CODE = "native-code:";
             private const string USES_PERMISSION = "uses-permission:'";
 
             private const string DENSITIES = "densities:";
@@ -46,8 +48,11 @@ namespace RegawMOD.Android
             private string sdkVersion;
             private string targetSdkVersion;
 
+            private List<string> nativeCodes;
             private List<string> usesPermission;
             private List<int> densities;
+
+            private Dictionary<string, string> values;
             #endregion
 
             #region Properties
@@ -55,17 +60,17 @@ namespace RegawMOD.Android
             /// Gets a <c>FileInfo</c> containing information about the source Apk
             /// </summary>
             public FileInfo Source { get { return this.source; } }
-            
+
             /// <summary>
             /// Gets a <see cref="PackageInfo"/> containing infomation about the Apk
             /// </summary>
             public PackageInfo Package { get { return this.package; } }
-            
+
             /// <summary>
             /// Gets a <see cref="ApplicationInfo"/> containing infomation about the Apk
             /// </summary>
             public ApplicationInfo Application { get { return this.application; } }
-            
+
             /// <summary>
             /// Gets a <see cref="LaunchableActivity"/> containing infomation about the Apk
             /// </summary>
@@ -75,11 +80,16 @@ namespace RegawMOD.Android
             /// Gets a value indicating the Android Sdk Version of the Apk
             /// </summary>
             public string SdkVersion { get { return this.sdkVersion; } }
-            
+
             /// <summary>
             /// Gets a value indicating the Target Android Sdk Version of the Apk
             /// </summary>
             public string TargetSdkVersion { get { return this.targetSdkVersion; } }
+
+            /// <summary>
+            /// Gets a list of native codes supported by this package.
+            /// </summary>
+            public List<string> NativeCodes { get { return this.nativeCodes; } }
 
             /// <summary>
             /// Gets a <c>List&lt;string&gt;</c> containing the Android Permissions used by the Apk
@@ -95,17 +105,19 @@ namespace RegawMOD.Android
             internal Badging(FileInfo source, string dump)
             {
                 this.source = source;
-                
+
                 this.package = new PackageInfo();
                 this.application = new ApplicationInfo();
                 this.activity = new LaunchableActivity();
 
                 this.sdkVersion = "";
                 this.targetSdkVersion = "";
+                this.nativeCodes = new List<string>();
 
                 this.usesPermission = new List<string>();
                 this.densities = new List<int>();
 
+                this.values = new Dictionary<string, string>();
                 ProcessDump(dump);
             }
 
@@ -118,6 +130,18 @@ namespace RegawMOD.Android
                     while (r.Peek() != -1)
                     {
                         line = r.ReadLine();
+
+                        if (line.Contains(":"))
+                        {
+                            var parts = line.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+                            var key = parts[0];
+                            var value = parts[1];
+                            this.values.Add(key, value);
+                        }
+                        else
+                        {
+                            this.values.Add(line, line);
+                        }
 
                         if (line.StartsWith(PACKAGE))
                         {
@@ -178,6 +202,11 @@ namespace RegawMOD.Android
                         else if (line.StartsWith(SDK_TARGET))
                         {
                             this.targetSdkVersion = line.Substring(SDK_TARGET.Length).Replace(APOSTROPHE, "");
+                        }
+                        else if (line.StartsWith(NATIVE_CODE))
+                        {
+                            this.nativeCodes.AddRange(
+                                line.Substring(NATIVE_CODE.Length + 2).Split(new char[] { APOSTROPHE_CHAR }, StringSplitOptions.RemoveEmptyEntries));
                         }
                         else if (line.StartsWith(USES_PERMISSION))
                         {
