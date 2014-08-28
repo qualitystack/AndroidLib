@@ -136,7 +136,15 @@ namespace RegawMOD.Android
                             var parts = line.Split(new char[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
                             var key = parts[0];
                             var value = parts[1];
-                            this.values.Add(key, value);
+
+                            if (!this.values.ContainsKey(key))
+                            {
+                                this.values.Add(key, value);
+                            }
+                            else
+                            {
+                                this.values[key] += Environment.NewLine + value;
+                            }
                         }
                         else
                         {
